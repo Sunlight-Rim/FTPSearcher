@@ -1,5 +1,7 @@
 FTP Searcher
 =========
+![GitHub](https://img.shields.io/github/license/Sunlight-Rim/FTPSearcher?color=green)
+
 **FTP Searcher** is an asynchronous file scanner from FTP servers list/IP range by query or filetype with recording the results to a file as a set of links.
 
 ![Terminal record](terminal.png)
