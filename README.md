@@ -50,14 +50,19 @@ The result file is overwritten each time you start the search, unless you specif
 
 Examples
 --------
-Scan single FTP and don't write results into a file.
+Scan single FTP for images and don't write results into a file.
 ```
-python3 ftpsearcher.py -f exampleftp.org -r N
+python3 ftpsearcher.py -f exampleftp.org -r N -i
 ```
 
 Scan FTP from /home/rim/target_place.txt and write results to results_place.html located in the program folder.
 ```
 python3 ftpsearcher.py -l /home/rim/target_place.txt -r results_place.html
+```
+
+Search a range of 254 addresses by query.
+```
+python3 ftpsearcher.py -ip 127.0.0.0-127.0.0.255 -q fairytales.pdf
 ```
 
 Scan FTP from FTP_list.txt and write results to results.html.
