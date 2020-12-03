@@ -65,7 +65,7 @@ Scan FTP from FTP_list.txt and write results to results.html.
 python3 ftpsearcher.py
 ```
 
-![speed](time.png)
+![speed](seconds.png)
 
 --------
 
