@@ -8,7 +8,7 @@ FTP Searcher
 
 Features
 --------
-Unlike other existing FTP-search engines that use threading, it useses asyncio as concurrency implementation because it's better suited for tasks that can implies slow I/O bound and multiple/unlimited quantity of connections. Also, there uses a four types of requests: MLSD/LIST (aioftp) in the main and MLSD/NLST (ftplib) as a reserve method for some servers.
+Unlike other existing FTP-search engines that use threading, it uses asyncio as concurrency implementation because it's better suited for tasks that can implies slow I/O bound and multiple/unlimited quantity of connections. Also, there used a four types of requests: MLSD/LIST (aioftp) in the main and MLSD/NLST (ftplib) as a reserve method for some servers.
 
 Attention: aioftp lib don't recognize Cyrillic symbols and skip files with them in their names; therefore, in some situations you can prefer to use only the synchronous mode [soon].
 
