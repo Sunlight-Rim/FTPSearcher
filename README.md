@@ -46,7 +46,7 @@ optional arguments:
 rest in pantene
 ```
 
-The result file is overwritten each time you start the search, unless you specify a file different from the previous one or '-r N' flag.
+The result file is overwritten each time you start the search, unless you specify a file different from the previous one or use '-r N' flag.
 
 Examples
 --------
