@@ -10,8 +10,6 @@ Features
 --------
 Unlike other existing FTP-search engines that use threading, it uses asyncio as concurrency implementation because it's better suited for tasks that can implies slow I/O bound and multiple/unlimited quantity of connections. Also, there used a four types of requests: MLSD/LIST (aioftp) in the main and MLSD/NLST (ftplib) as a reserve method for some servers.
 
-Attention: some poorly configured FTP is not recognized by aioftp lib; therefore, in some situations you can prefer to use only synchronous mode (flag -s).
-
 Installation
 --------
 
@@ -46,8 +44,9 @@ optional arguments:
 rest in pantene
 ```
 
-If you don't explicitly specify the port, port 21 will be used by default.
-The result file is overwritten each time you start the search, unless you specify a file different from the previous one or use '-r N' flag.
+If you don't explicitly specify the port, port 21 will be used by default.\
+The result file is overwritten each time you start the search, unless you specify a file different from the previous one or use '-r N' flag.\
+Attention: some poorly configured FTP is not recognized by aioftp lib; therefore, in some situations you can prefer to use only synchronous mode (flag -s).
 
 Examples
 --------
