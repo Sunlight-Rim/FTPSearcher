@@ -2,6 +2,7 @@ import argparse
 import os
 import asyncio
 import aioftp
+import threading
 import socket
 import async_timeout
 from socket import gaierror
@@ -38,8 +39,9 @@ def get_args():
     return parser.parse_args()
 
 # searching for a file by filetype with a param or by a substring of an object with a query.
-def searching(name):
+def searching(name, pathlist):
     full_path = "/".join(filter(None, pathlist)) + "/" + name
+    full_path = full_path.encode('cp1252').decode('cp1251')
     global syncnumber
     syncnumber += 1
     if args.extns != False:
@@ -52,36 +54,40 @@ def searching(name):
 
 # ----------------------------------SYNCHRONOUS BLOCK-------------------------------------------------------------------
 # recursively checking all directories that are not files using the MLSD-method, if it can be used.
-def cycle_inner(folder):
+def cycle_inner(folder, ftp, pathlist):
     ftp.cwd(folder)
     pathlist.append(folder)
     for data in ftp.mlsd():
         type = data[1].get('type')
         if data[0] != '.' and  data[0] != '..':
             if type != 'dir':
-                searching(data[0])
+                searching(data[0], pathlist)
             elif type == 'dir':
                 try:
-                    cycle_inner(data[0])
+                    cycle_inner(data[0], ftp, pathlist)
                     ftp.sendcmd('cdup')
-                    pathlist.pop()
+                    pathlist.pop() if len(pathlist) > 1 else None
                 except error_perm:
                     print(Fore.YELLOW + "Cannot open the folder " + Fore.WHITE + data[0])
+                    if args.result != "N":
+                        ferr = open(args.result, 'a')
+                        ferr.write("Cannot open the folder " + data[0] + "\n")
+                        ferr.close
                     ftp.sendcmd('cdup')
-                    pathlist.pop()
+                    pathlist.pop() if len(pathlist) > 1 else None
 
 # recursively checking all files and directories together using the NLST-method, if MLSD is not supported on the server.
-def badftp_cycle(maybe_folder):
+def badftp_cycle(maybe_folder, ftp, pathlist):
     ftp.cwd(maybe_folder)
     pathlist.append(maybe_folder)
     if len(ftp.nlst()) >= 1:
         for isitafolder in ftp.nlst():
             try:
-                badftp_cycle(isitafolder)
+                badftp_cycle(isitafolder, ftp, pathlist)
                 ftp.sendcmd('cdup')
                 pathlist.pop() if len(pathlist) > 1 else None
             except error_perm:
-                searching(isitafolder)
+                searching(isitafolder, pathlist)
                 continue
     else:
         ftp.sendcmd('cdup')
@@ -90,18 +96,16 @@ def badftp_cycle(maybe_folder):
 # connecting to FTP with ftplib.
 def connect(host, cnct_port):
     print(Fore.GREEN + "Now it's " + Fore.WHITE + host + Fore.GREEN + " with MLSD.")
-    global pathlist
     host_port = host + ":" + str(cnct_port)
     pathlist = [host_port]
-    global ftp
     try:
-        ftp = FTP(host, timeout=7)
+        ftp = FTP(host, timeout=15)
         ftp.connect(port=cnct_port)
         ftp.login()
         global syncnumber
         syncnumber = 0
         try:
-            cycle_inner("") if len(pathlist) != [] else None
+            cycle_inner("", ftp, pathlist)
         except KeyboardInterrupt:
             print(Fore.RED + "\nYou have interrupted folder scanning. Move back to the parent directory.")
             ftp.sendcmd('cdup')
@@ -109,18 +113,25 @@ def connect(host, cnct_port):
         except error_perm as msg:
             if msg.args[0][:3] == '500':
                 print(Fore.GREEN + "MLSD is not supported on server " + Fore.WHITE + host)
-                pathlist.pop(0) if len(pathlist) != [] else None
-                badftp_cycle("")
+                badftp_cycle("", ftp, pathlist)
         print(host + Fore.GREEN + " was getted.")
         ftp.quit()
     except OSError as oser:
         if str(oser) == "timed out":
-            print(host + Fore.RED + " does not keep a stable connection. Try later?")
+            print(host + Fore.RED + " does not keep a stable connection. Try to run this separately?")
+            if args.result != "N":
+                ferr = open(args.result, 'a')
+                ferr.write(host + " does not keep a stable connection. Try to run this separately?\n")
+                ferr.close
     except error_perm as msg:
         if msg.args[0][:3] != '530':
             print("Login authentication failed")
         else:
             print(msg.args[0][:3])
+    except KeyboardInterrupt:
+        print(Fore.RED + "\nYou have interrupted folder scanning. Move back to the parent directory.")
+        ftp.sendcmd('cdup')
+        pathlist.pop()
 
 # --------------------------------ASYNCHRONOUS BLOCK--------------------------------------------------------------------
 # aioftp connecting and checking.
@@ -160,12 +171,16 @@ async def asyncgetting(host, port, command, asyncnumber):
                     await asyncgetting(host, port, 'LIST', 0)
                 elif "ommand not underst" in str(iner.info):
                     print(Fore.GREEN + "Asynchronous methods is not available on server " + Fore.WHITE + host + ":" + str(port) + Fore.GREEN + " Trying to use synchronous MLSD.")
-                    connect(host, port)
+                    t = threading.Thread(target=connect, name="Thread " + host + str(port), args=(host, port))
+                    thread_list.append(t)
+                    t.start()
                 else:
                     print(iner)
             elif str(iner.received_codes) == "('550',)":
                 print(Fore.GREEN + "Error 550 (Can't check for file existence) with server " + Fore.WHITE + host + ":" + str(port) + Fore.GREEN + ". Trying to use synchronous MLSD.")
-                connect(host, port)
+                t = threading.Thread(target=connect, name="Thread " + host + str(port), args=(host, port))
+                thread_list.append(t)
+                t.start()
             else:
                 print(iner)
     except aioftp.StatusCodeError as exer:
@@ -252,6 +267,8 @@ def main():
     tasks = []
     global args
     args = get_args()
+    global thread_list
+    thread_list = []
     if args.result != "N":
         try:
             frw = open(args.result, 'w')
@@ -285,6 +302,8 @@ def main():
 
         try:
             ioloop.run_until_complete(asyncio.gather(*tasks))
+            if thread_list != []:
+                [t.join() for t in thread_list]
             print(Fore.YELLOW + Style.BRIGHT + "Connections completed.")
         except KeyboardInterrupt:
             print(Fore.RED + "\nYou have interrupted the FTP Searcher.")
