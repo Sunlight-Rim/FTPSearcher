@@ -17,7 +17,6 @@ Installation
 git clone https://github.com/Sunlight-Rim/FTPSearcher.git
 cd FTPSearcher
 pip3 install -r requirements.txt
-python3 ftpsearcher.py
 ```
 
 Usage
