@@ -8,7 +8,7 @@ FTP Searcher
 
 Features
 --------
-Unlike other existing FTP-search engines that use threading, it uses asyncio as concurrency implementation because it's better suited for tasks that can implies slow I/O bound and multiple/unlimited quantity of connections. Also, there used a four types of requests: MLSD/LIST (aioftp) in the main and MLSD/NLST (ftplib) as a reserve method for some servers.
+Unlike other existing FTP-search engines that use threading, it uses asyncio as concurrency implementation because it's better suited for tasks that can implies slow I/O bound and multiple/unlimited quantity of connections. Also, there used a four types of requests: MLSD/LIST (aioftp with asyncio) in the main and MLSD/NLST (ftplib with threading) as a reserve method for some servers.
 
 Installation
 --------
@@ -46,18 +46,18 @@ rest in pantene
 
 If you don't explicitly specify the port, port 21 will be used by default.\
 The result file is overwritten each time you start the search, unless you specify a file different from the previous one or use '-r N' flag.\
-Attention: some poorly configured FTP is not recognized by aioftp lib; therefore, in some situations you can prefer to use only synchronous mode (flag -s).
+Attention: some poorly configured FTP can't be used with concurrency methods; therefore, in such situations you can prefer to use only synchronous mode (flag -s).
 
 Examples
 --------
-Search images on single FTP with port 20 and don't write results into a file.
+Search by query on single FTP with port 20 and don't write results into a file.
 ```
-python3 ftpsearcher.py -f exampleftp.org:20 -r N -i
+python3 ftpsearcher.py -f exampleftp.org:20 -r N -q ozone_smell.epub
 ```
 
-Scan all files on FTP list in /home/rim/target_place.txt and record results to results_place.html located in the program folder.
+Search images on FTP list in /home/rim/target_place.txt and record results to results_place.html located in the program folder.
 ```
-python3 ftpsearcher.py -l /home/rim/target_place.txt -r results_place.html
+python3 ftpsearcher.py -l /home/rim/target_place.txt -r results_place.html -i
 ```
 
 Search a range of 254 addresses on 21 port by two queries and don't write results.
