@@ -46,11 +46,10 @@ def searching(name, pathlist):
     syncnumber += 1
     if args.extns != False:
          [results(full_path, syncnumber) for extension in args.extns if full_path.endswith(extension)]
+    elif args.obj == '':
+         results(full_path, syncnumber)
     else:
-        if args.obj == '':
-            results(full_path, syncnumber)
-        else:
-            [results(full_path, syncnumber) for object in args.obj if object in full_path.split("/")[-1]]
+         [results(full_path, syncnumber) for object in args.obj if object in full_path.split("/")[-1]]
 
 # ----------------------------------SYNCHRONOUS BLOCK-------------------------------------------------------------------
 # recursively checking all directories that are not files using the MLSD-method, if it can be used.
@@ -118,14 +117,14 @@ def connect(host, cnct_port):
         ftp.quit()
     except OSError as oser:
         if str(oser) == "timed out":
-            print(host + Fore.RED + " does not keep a stable connection. Try to run this separately?")
+            print(host + Fore.RED + " does not keep a stable connection. Try to run this separately or later?")
             if args.result != "N":
                 ferr = open(args.result, 'a')
-                ferr.write(host + " does not keep a stable connection. Try to run this separately?\n")
+                ferr.write(host + " does not keep a stable connection. Try to run this separately or later?\n")
                 ferr.close
     except error_perm as msg:
         if msg.args[0][:3] != '530':
-            print("Login authentication failed")
+            print(Fore.GREEN + "Login authentication failed onto " + Fore.WHITE + host + ":" + str(cnct_port))
         else:
             print(msg.args[0][:3])
     except KeyboardInterrupt:
@@ -151,11 +150,11 @@ async def asyncgetting(host, port, command, asyncnumber):
                                 asyncnumber += 1
                                 full_path = str(host) + ":" + str(port) + "/" + str(path)
                                 results(full_path, asyncnumber)
-                    else:
-                        if args.obj == '':
-                            asyncnumber += 1
-                            full_path = str(host) + ":" + str(port) + "/" + str(path)
-                            results(full_path, asyncnumber)
+                    elif args.obj == '':
+                        asyncnumber += 1
+                        full_path = str(host) + ":" + str(port) + "/" + str(path)
+                        results(full_path, asyncnumber)
+                    elif args.obj != '':
                         for object in args.obj:
                             if object in str(path).split("/")[-1]:
                                 asyncnumber += 1
@@ -302,8 +301,7 @@ def main():
 
         try:
             ioloop.run_until_complete(asyncio.gather(*tasks))
-            if thread_list != []:
-                [t.join() for t in thread_list]
+            [t.join() for t in thread_list if thread_list != []]
             print(Fore.YELLOW + Style.BRIGHT + "Connections completed.")
         except KeyboardInterrupt:
             print(Fore.RED + "\nYou have interrupted the FTP Searcher.")
