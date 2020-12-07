@@ -123,10 +123,7 @@ def connect(host, cnct_port):
                 ferr.write(host + " does not keep a stable connection. Try to run this separately or later?\n")
                 ferr.close
     except error_perm as msg:
-        if msg.args[0][:3] != '530':
-            print(Fore.GREEN + "Login authentication failed onto " + Fore.WHITE + host + ":" + str(cnct_port))
-        else:
-            print(msg.args[0][:3])
+        print(Fore.GREEN + "Login authentication failed onto " + Fore.WHITE + host + ":" + str(cnct_port)) if msg.args[0][:3] != '530' else print(msg.args[0][:3])
     except KeyboardInterrupt:
         print(Fore.RED + "\nYou have interrupted folder scanning. Move back to the parent directory.")
         ftp.sendcmd('cdup')
@@ -168,7 +165,7 @@ async def asyncgetting(host, port, command, asyncnumber):
                 if str(iner.info) == "[' Unknown command.']":
                     print(Fore.GREEN + "MLSD is not supported on server " + Fore.WHITE + host + ":" + str(port) + Fore.GREEN + " Trying to use asynchronous LIST.")
                     await asyncgetting(host, port, 'LIST', 0)
-                elif "ommand not underst" in str(iner.info):
+                elif "not underst" in str(iner.info):
                     print(Fore.GREEN + "Asynchronous methods is not available on server " + Fore.WHITE + host + ":" + str(port) + Fore.GREEN + " Trying to use synchronous MLSD.")
                     t = threading.Thread(target=connect, name="Thread " + host + str(port), args=(host, port))
                     thread_list.append(t)
