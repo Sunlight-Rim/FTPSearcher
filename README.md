@@ -2,7 +2,7 @@ FTP Searcher
 =========
 ![GitHub](https://img.shields.io/github/license/Sunlight-Rim/FTPSearcher?color=green)
 
-**FTP Searcher** is an asynchronous file scanner from FTP servers list/IP range by queries or filetypes with recording the results to a file as a set of links.
+**FTP Searcher** is an asynchronous file scanner on FTP servers list/IP range by queries or filetypes with recording the results to a file as a set of links.
 
 ![Terminal record](terminal.png)
 
@@ -45,7 +45,7 @@ rest in pantene
 
 If you don't explicitly specify the port, port 21 will be used by default.\
 The result file is overwritten each time you start the search, unless you specify a file different from the previous one or use '-r N' flag.\
-Attention: some poorly configured FTP can't be used with concurrency methods; therefore, in such situations you can prefer to use only synchronous mode (flag -s).
+Attention: some poorly configured FTP can't be used with concurrency methods; therefore, in such situations you can prefer to use only synchronous mode (flag '-s').
 
 Examples
 --------
@@ -59,7 +59,7 @@ Search images on FTP list in /home/rim/target_place.txt and record results to re
 python3 ftpsearcher.py -l /home/rim/target_place.txt -r results_place.html -i
 ```
 
-Search a range of 254 addresses on 21 port by two queries and don't write results.
+Search on range of 254 addresses eith 21 port by two queries and don't write results.
 ```
 python3 ftpsearcher.py -ip 127.0.0.0-127.0.0.255 -q fairytales.pdf electric_transmission.json -r N
 ```
