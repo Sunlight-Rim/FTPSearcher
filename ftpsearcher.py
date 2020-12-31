@@ -257,7 +257,7 @@ def results(full_path, number):
 
 def main():
     program_banner = open(os.path.join("banner.txt")).read()
-    init(autoreset=True)
+    init(autoreset = True)
     print(Fore.YELLOW + Style.BRIGHT + program_banner)
     global tasks
     tasks = []
@@ -270,7 +270,7 @@ def main():
             frw = open(args.result, 'w')
             frw.close
         except FileNotFoundError:
-            print(Fore.RED + "File" + Fore.WHITE + args.result + Fore.RED + " not found.")
+            print(Fore.RED + "File " + Fore.WHITE + args.result + Fore.RED + " not found.")
         except PermissionError:
             print(Fore.RED + "Unable to open results file, but file " + Fore.WHITE +  args.result + Fore.RED + " was found. Check your privileges.")
     if args.hosts != False: # for single or some target FTP.
