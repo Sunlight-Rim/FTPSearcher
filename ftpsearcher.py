@@ -98,8 +98,8 @@ def connect(host, cnct_port):
     host_port = host + ":" + str(cnct_port)
     pathlist = [host_port]
     try:
-        ftp = FTP(host, timeout=15)
-        ftp.connect(port=cnct_port)
+        ftp = FTP(host, timeout = 15)
+        ftp.connect(port = cnct_port)
         ftp.login()
         global syncnumber
         syncnumber = 0
