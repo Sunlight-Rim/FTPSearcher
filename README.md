@@ -44,29 +44,28 @@ rest in pantene
 ```
 
 If you don't explicitly specify the port, port 21 will be used by default.\
-The result file is overwritten each time you start the search, unless you specify a file different from the previous one or use '-r N' flag.\
-Attention: some poorly configured FTP can't be used with concurrency methods; therefore, in such situations you can prefer to use only synchronous mode (flag '-s').
+Attention: some poorly configured FTP can't be scanned with concurrency methods; therefore, in such situations you can prefer to use only synchronous mode (flag '-s').
 
 Examples
 --------
-Search by query on single FTP with port 20 and don't write results into a file.
-```
-python3 ftpsearcher.py -f exampleftp.org:20 -r N -q ozone_smell.epub
-```
-
-Search images on FTP list in /home/rim/target_place.txt and record results to results_place.html located in the program folder.
-```
-python3 ftpsearcher.py -l /home/rim/target_place.txt -r results_place.html -i
-```
-
-Search on range of 254 addresses eith 21 port by two queries and don't write results.
-```
-python3 ftpsearcher.py -ip 127.0.0.0-127.0.0.255 -q fairytales.pdf electric_transmission.json -r N
-```
-
 Scan all files on FTP from ftplist.txt and write results to results.html.
 ```
 python3 ftpsearcher.py
+```
+
+Search by query on single FTP with port 20 and don't write results into a file.
+```
+python3 ftpsearcher.py -f exampleftp.org:20 -q fairytales.pdf -r N
+```
+
+Search on range of 254 addresses with port 21 by two queries and don't write results into a file.
+```
+python3 ftpsearcher.py -ip 127.0.0.0-127.0.0.255 -q petrichor.epub thunderstorm.jpg -r N
+```
+
+Search images on FTP list in /home/rim/targets-example.txt and record results to results-example.html located in the program folder.
+```
+python3 ftpsearcher.py -l /home/rim/targets-example.txt -r results-example.html -i
 ```
 
 ![speed](seconds.png)
