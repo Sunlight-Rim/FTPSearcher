@@ -287,6 +287,7 @@ def unpack_range(range_port):
         print(Fore.RED + "Illegal IP address string passed in range.") if "illegal IP address string passed to inet_aton" in str(oerr) else None
 
 # ----------------------------------------------------------------------------------------------------------------------
+
 async def asyncpreresults(host, port, path, asyncnumber):
     full_path = str(host) + ":" + str(port) + "/" + str(path)
     results(full_path, asyncnumber)
