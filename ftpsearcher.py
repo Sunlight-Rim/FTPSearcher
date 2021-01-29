@@ -210,18 +210,18 @@ async def asyncgetting(host, port, command, asyncnumber):
     except ConnectionResetError:
         print(host + ":" + str(port) + Fore.RED + " sent a reset package.")
     except gaierror:
-        print(host + ":" + str(port) + Fore.RED + " not responding.") if args.display == True else None
+        print(host + ":" + str(port) + Fore.RED + " not responding.") if args.display else None
     except asyncio.TimeoutError:
-        print(host + ":" + str(port) + Fore.RED + " not responding.") if args.display == True else None
+        print(host + ":" + str(port) + Fore.RED + " not responding.") if args.display else None
     except OSError as oerr:
         if str(oerr) == "timed out":
-            print(host + ":" + str(port) + Fore.RED + " not responding.") if args.display == True else None
+            print(host + ":" + str(port) + Fore.RED + " not responding.") if args.display else None
         elif "[Errno 111] Connect call failed" in str(oerr):
-            print(host + ":" + str(port) + Fore.RED + " not responding (error 111).") if args.display == True else None
+            print(host + ":" + str(port) + Fore.RED + " not responding (error 111).") if args.display else None
         elif "[Errno 113] Connect call failed" in str(oerr):
-            print(host + ":" + str(port) + Fore.RED + " not responding (error 113).") if args.display == True else None
+            print(host + ":" + str(port) + Fore.RED + " not responding (error 113).") if args.display else None
         elif "[Errno 101] Connect call failed" in str(oerr):
-            print(host + ":" + str(port) + Fore.RED + " not responding (error 101).") if args.display == True else None
+            print(host + ":" + str(port) + Fore.RED + " not responding (error 101).") if args.display else None
         elif str(oerr) == "[Errno 24] Too many open files":
             print("The range is too large. Try to specify less?")
         else:
@@ -235,7 +235,7 @@ def unpack_list(list):
     try:
         flist = open(list, "r")
         liststr = flist.read().split('\n')
-        if args.sync == True:
+        if args.sync:
             for string in liststr:
                 if string != "":
                     host, *port = string.split(":")
@@ -271,7 +271,7 @@ def unpack_range(range_port):
 
 # division a range by blocks with 1000 hosts to bypass aioftp connection error [Errno 24].
         [tasks_list.append([]) for _ in range(int(len(hosts) / 1000) + 1)]
-        if args.sync == True:
+        if args.sync:
             for host in hosts:
                 connect(host, *port)
         else:
@@ -346,7 +346,7 @@ def main():
     if args.hosts != False: # for single or some target FTP.
         args.list = False
         print(Style.DIM + str(args)[10:-1] + "\n")
-        if args.sync == True:
+        if args.sync:
             for host_port in args.hosts:
                 host, *port = host_port.split(":")
                 port = ([int(port) for port in port]) if port != [] else [21]

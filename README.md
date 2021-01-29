@@ -58,7 +58,7 @@ python3 ftpsearcher.py
 
 Download files by query on single FTP and don't write the results into a file.
 ```
-python3 ftpsearcher.py -f fairytales.org -q andersen.pdf --d -r N
+python3 ftpsearcher.py -f fairytales.org -q andersen.pdf -d -r N
 ```
 
 Scan files on a range of 254 addresses with port 21 by two queries and don't write the results into a file.
