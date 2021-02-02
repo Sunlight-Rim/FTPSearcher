@@ -5,6 +5,7 @@ import aioftp
 import threading
 import socket
 import async_timeout
+from os import environ
 from socket import gaierror
 from ftplib import FTP, error_perm
 from colorama import Fore, Style, init
@@ -156,7 +157,7 @@ def connect(host, cnct_port):
 async def asyncgetting(host, port, command, asyncnumber):
     try:
         client = aioftp.Client()
-        async with async_timeout.timeout(4):
+        async with async_timeout.timeout(7):
             await client.connect(host, port)
             await client.login()
         print(host + Fore.GREEN + " started with asynchronous method: " + Fore.WHITE + command)
@@ -196,6 +197,11 @@ async def asyncgetting(host, port, command, asyncnumber):
                     print(inerr)
             elif str(inerr.received_codes) == "('550',)":
                 print(Fore.GREEN + "Error 550 (Can't check for file existence) with server " + Fore.WHITE + host + ":" + str(port) + Fore.GREEN + ". Trying to use synchronous MLSD.")
+                t = threading.Thread(target=connect, name="Thread " + host + str(port), args=(host, port))
+                thread_list.append(t)
+                t.start()
+            elif "Waiting for ('1xx',) but got 501" in str(inerr):
+                print(Fore.GREEN + "Error 501 (Not a directory) with server " + Fore.WHITE + host + ":" + str(port) + Fore.GREEN + ". Trying to use synchronous MLSD.")
                 t = threading.Thread(target=connect, name="Thread " + host + str(port), args=(host, port))
                 thread_list.append(t)
                 t.start()
@@ -327,7 +333,7 @@ def results(full_path, number):
 # ----------------------------------------------------------------------------------------------------------------------
 
 def main():
-    program_banner = open(os.path.join("banner.txt")).read()
+    program_banner = open(os.path.join("banner_android.txt")).read() if 'ANDROID_STORAGE' in environ else open(os.path.join("banner.txt")).read()
     init(autoreset = True)
     print(Fore.YELLOW + Style.BRIGHT + program_banner)
     global args
