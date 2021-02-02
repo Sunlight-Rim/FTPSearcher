@@ -10,9 +10,16 @@ from socket import gaierror
 from ftplib import FTP, error_perm
 from colorama import Fore, Style, init
 
+class BlankLinesHelpFormatter (argparse.HelpFormatter):
+    def _split_lines(self, text, width):
+        lines = super()._split_lines(text, width)
+        if text.endswith('\n'):
+            lines += ['']
+        return lines
+
 def get_args():
-    print("ver. 1.1\n")
-    parser = argparse.ArgumentParser(epilog="rest in pantene")
+    print("ver. 1.2\n")
+    parser = argparse.ArgumentParser(epilog="rest in pantene", formatter_class=BlankLinesHelpFormatter)
     parser.add_argument("-l", type=str, dest="list", default="ftplist.txt",
             help="Path to txt file with FTP target list in form 'host:port' (ftplist.txt by default).")
     parser.add_argument("-f", type=str, dest="hosts", default=False, nargs="+",
@@ -21,14 +28,18 @@ def get_args():
             help="Target IP range as 'start-end:port'.")
     parser.add_argument("-r", dest="result", type=str, default="results.html",
             help="Path to html-file for saving results (results.html by default). Enter '-r N' to cancel.")
-    parser.add_argument("-q", dest="obj", type=str, default="", nargs="+",
-            help="Queries to search substrings into filenames.")
     parser.add_argument("-d", "--download", dest="download", action="store_true", default=False,
-            help="Automatically downloads all the find files to the /downloads/ folder.")
+            help="Automatically downloads all the found files to the /downloads/ folder.")
+    parser.add_argument("-lvl", type=int, dest="max_lvl", default=0,
+            help="Set up the maximum file tree level on FTP servers.")
     parser.add_argument("-nd", "--nodisplay", dest="display", action="store_false", default=True,
             help="Do not display servers that are not responding in the terminal log.")
+    parser.add_argument("-s", "--sync", dest="sync", action="store_true", default=False,
+            help="Use only synchronous requests.\n")
     parser.add_argument("-A", "--all", dest="obj", action="store_const", const="", default="",
             help="Search all files.")
+    parser.add_argument("-q", dest="obj", type=str, default="", nargs="+",
+            help="Queries to search substrings into filenames.")
     parser.add_argument("-img", "--images", dest="extns", action="store_const", const=('.jpg', '.jpeg', '.png', '.gif', '.svg', '.bmp', '.tif', '.tiff', '.psd', '.xcf'), default=False,
             help="Search only by images (jpg, jpeg, png, gif, svg, bmp, tif/tiff, psd, xcf).")
     parser.add_argument("-vid", "--videos", dest="extns", action="store_const", const=('.mp4', '.mov', '.avi', '.webm', '.3gp', '.3gpp'), default=False,
@@ -39,8 +50,6 @@ def get_args():
             help="Search only by docs (doc, docx, pdf, epub, fb2).")
     parser.add_argument("-zip", "--archives", dest="extns", action="store_const", const=('.zip', '.rar', '.7z', '.tar', '.tar.gz', '.cab'), default=False,
             help="Search only by archives (zip, rar, 7z, tar, tar.gz, cab).")
-    parser.add_argument("-s", "--sync", dest="sync", action="store_true", default=False,
-            help="Use only synchronous requests.")
     return parser.parse_args()
 
 # searching for a file by filetype with a param or by a substring of an object with a query.
@@ -79,42 +88,48 @@ def syncdownload(name, full_path, ftp):
 def cycle_inner(folder, ftp, pathlist):
     ftp.cwd(folder)
     pathlist.append(folder)
-    for data in ftp.mlsd():
-        type = data[1].get('type')
-        if data[0] != '.' and  data[0] != '..':
-            if type != 'dir':
-                searching(data[0], pathlist, ftp)
-            elif type == 'dir':
-                try:
-                    cycle_inner(data[0], ftp, pathlist)
-                    ftp.sendcmd('cdup')
-                    pathlist.pop() if len(pathlist) > 1 else None
-                except error_perm:
-                    print(Fore.YELLOW + "Cannot open the folder " + Fore.WHITE + data[0])
-                    results(data[0], -3)
-                    ftp.sendcmd('cdup')
-                    pathlist.pop() if len(pathlist) > 1 else None
+    try:
+        if ((args.max_lvl != 0) and (len(pathlist) < args.max_lvl + 3)) or ((args.max_lvl == 0)):
+            for data in ftp.mlsd():
+                type = data[1].get('type')
+                if data[0] != '.' and  data[0] != '..':
+                    if type != 'dir' and type != 'pdir' and type != 'cdir':
+                        searching(data[0], pathlist, ftp)
+                    elif type == 'dir':
+                        try:
+                            cycle_inner(data[0], ftp, pathlist)
+                            ftp.sendcmd('cdup')
+                            pathlist.pop() if len(pathlist) > 1 else None
+                        except error_perm:
+                            print(Fore.YELLOW + "Cannot open the folder " + Fore.RESET + data[0])
+                            results(data[0], -3)
+                            ftp.sendcmd('cdup')
+                            pathlist.pop() if len(pathlist) > 1 else None
+    except UnicodeDecodeError:
+        print(Fore.RED + "This server has cyrillic symbols in the files, this cannot be interpreted in the Android version of this program. But some non-cyrillic files and paths can be recognized.")
+        badftp_cycle("", ftp, pathlist)
 
 # recursively checking all files and directories together using the NLST-method, if MLSD is not supported on the server.
 def badftp_cycle(maybe_folder, ftp, pathlist):
     ftp.cwd(maybe_folder)
     pathlist.append(maybe_folder)
-    if len(ftp.nlst()) >= 1:
-        for isitafolder in ftp.nlst():
-            try:
-                badftp_cycle(isitafolder, ftp, pathlist)
-                ftp.sendcmd('cdup')
-                pathlist.pop() if len(pathlist) > 1 else None
-            except error_perm:
-                searching(isitafolder, pathlist, ftp)
-                continue
-    else:
-        ftp.sendcmd('cdup')
-        pathlist.pop() if len(pathlist) > 1 else None
+    if ((args.max_lvl != 0) and (len(pathlist) <= args.max_lvl  + 3)) or ((args.max_lvl == 0)):
+        if len(ftp.nlst()) > 0:
+            for isitafolder in ftp.nlst():
+                try:
+                    badftp_cycle(isitafolder, ftp, pathlist)
+                    ftp.sendcmd('cdup')
+                    pathlist.pop() if len(pathlist) > 1 else None
+                except error_perm:
+                    searching(isitafolder, pathlist, ftp)
+                    continue
+        else:
+            ftp.sendcmd('cdup')
+            pathlist.pop() if len(pathlist) > 1 else None
 
 # connecting to FTP with ftplib.
 def connect(host, cnct_port):
-    print(Fore.GREEN + "Now it's " + Fore.WHITE + host + Fore.GREEN + " with synchronous MLSD.")
+    print(Fore.GREEN + "Now it's " + Fore.RESET + host + Fore.GREEN + " with synchronous MLSD.")
     host_port = host + ":" + str(cnct_port)
     pathlist = [host_port]
     try:
@@ -131,9 +146,9 @@ def connect(host, cnct_port):
             pathlist.pop()
         except error_perm as msg:
             if msg.args[0][:3] == '500':
-                print(Fore.GREEN + "MLSD is not supported on server " + Fore.WHITE + host + Fore.GREEN + ". Trying to use synchronous NLST.")
+                print(Fore.GREEN + "MLSD is not supported on server " + Fore.RESET + host + Fore.GREEN + ". Trying to use synchronous NLST.")
                 badftp_cycle("", ftp, pathlist)
-        print(host + Fore.GREEN + " was getted.")
+        print(host + Fore.GREEN + " was crawled.")
         ftp.quit()
     except OSError as oerr:
         if str(oerr) == "timed out":
@@ -143,7 +158,7 @@ def connect(host, cnct_port):
         print(Fore.RED + "Server sent a reset package.")
     except error_perm as msg:
         if msg.args[0][:3] != '530':
-            print(Fore.GREEN + "Login authentication failed onto " + Fore.WHITE + host + ":" + str(cnct_port))
+            print(Fore.GREEN + "Login authentication failed onto " + Fore.RESET + host + ":" + str(cnct_port))
             results(host, -1)
         else:
             print(msg.args[0][:3])
@@ -157,13 +172,16 @@ def connect(host, cnct_port):
 async def asyncgetting(host, port, command, asyncnumber):
     try:
         client = aioftp.Client()
-        async with async_timeout.timeout(7):
+        async with async_timeout.timeout(5):
             await client.connect(host, port)
             await client.login()
-        print(host + Fore.GREEN + " started with asynchronous method: " + Fore.WHITE + command)
+        print(host + Fore.GREEN + " started with asynchronous method: " + Fore.RESET + command)
         try:
             async for path, info in client.list(recursive=True, raw_command=command):
-                if info["type"] == "file":
+                if args.max_lvl != 0:
+                    if str(path).count("/") - 1 >= args.max_lvl:
+                        break
+                if info["type"] == "file":          # it's better than client.is_file(path)
                     if args.extns != False:         # for extensions.
                         for extension in args.extns:
                             if str(path).endswith(extension):
@@ -177,42 +195,50 @@ async def asyncgetting(host, port, command, asyncnumber):
                             if object in str(path).split("/")[-1]:
                                 asyncnumber += 1
                                 await asyncpreresults(host, port, path, asyncnumber)
-                elif info["type"] == "dir":
+                elif info["type"] == "dir":         # it's better than client.is_dir(path)
                     full_path = str(host) + ":" + str(port) + "/" + str(path)
                     results(full_path, 0)
-            print(host + Fore.GREEN + " was getted.")
+            print(host + Fore.GREEN + " was crawled.")
 
 # exception handling.
         except aioftp.StatusCodeError as inerr:
             if str(inerr.received_codes) == "('500',)":
                 if str(inerr.info) == "[' Unknown command.']":
-                    print(Fore.GREEN + "MLSD is not supported on server " + Fore.WHITE + host + ":" + str(port) + Fore.GREEN + ". Trying to use asynchronous LIST.")
+                    print(Fore.GREEN + "MLSD is not supported on server " + Fore.RESET + host + ":" + str(port) + Fore.GREEN + ". Trying to use asynchronous LIST.")
                     await asyncgetting(host, port, 'LIST', 0)
                 elif "not underst" in str(inerr.info):
-                    print(Fore.GREEN + "Asynchronous methods is not available on server " + Fore.WHITE + host + ":" + str(port) + Fore.GREEN + ". Trying to use synchronous MLSD.")
+                    print(Fore.GREEN + "Asynchronous methods is not available on server " + Fore.RESET + host + ":" + str(port) + Fore.GREEN + ". Trying to use synchronous MLSD.")
                     t = threading.Thread(target=connect, name="Thread " + host + str(port), args=(host, port))
                     thread_list.append(t)
                     t.start()
                 else:
-                    print(inerr)
+                    print(str(inerr) + " on " + host)
             elif str(inerr.received_codes) == "('550',)":
-                print(Fore.GREEN + "Error 550 (Can't check for file existence) with server " + Fore.WHITE + host + ":" + str(port) + Fore.GREEN + ". Trying to use synchronous MLSD.")
+                print(Fore.GREEN + "Error 550 (Can't check for file existence) with server " + Fore.RESET + host + ":" + str(port) + Fore.GREEN + ". Trying to use synchronous MLSD.")
                 t = threading.Thread(target=connect, name="Thread " + host + str(port), args=(host, port))
                 thread_list.append(t)
                 t.start()
             elif "Waiting for ('1xx',) but got 501" in str(inerr):
-                print(Fore.GREEN + "Error 501 (Not a directory) with server " + Fore.WHITE + host + ":" + str(port) + Fore.GREEN + ". Trying to use synchronous MLSD.")
+                print(Fore.GREEN + "Error 501 (Not a directory) with server " + Fore.RESET + host + ":" + str(port) + Fore.GREEN + ". Trying to use synchronous MLSD.")
                 t = threading.Thread(target=connect, name="Thread " + host + str(port), args=(host, port))
                 thread_list.append(t)
                 t.start()
             else:
-                print(inerr)
+                print(str(inerr) + " on " + host)
     except aioftp.StatusCodeError as exerr:
-        if str(exerr.received_codes) == "('530',)":
-            print(Fore.GREEN + "Login authentication failed onto " + Fore.WHITE + host + ":" + str(port))
+        if str(exerr.received_codes) == "('530',)" or "Waiting for ('230', '33x') but got 421 [' Unable to set up secure anonymous FTP']" in str(exerr):
+            print(Fore.GREEN + "Login authentication failed onto " + Fore.RESET + host + ":" + str(port))
             results(host, -1)
+        elif "Waiting for ('230', '33x') but got 421 [\" Can't change directory" in str(exerr):
+            print(Fore.RED + "Can't change directory on " + Fore.RESET + host)
+        elif str(exerr) == "Waiting for ('230', '33x') but got 550 [\" Can't set guest privileges.\"]":
+            print(Fore.RED + "Can't set guest privileges on " + Fore.RESET + host)
+        elif str(exerr) == "Waiting for ('220',) but got 501 [' Proxy unable to contact ftp server']":
+            print(Fore.RED + "Proxy unable to contact " + Fore.RESET + host)
+        elif str(exerr) == "Waiting for ('220',) but got 550 [' No connections allowed from your IP']" or str(exerr) == "Waiting for ('230', '33x') but got 421 [' Temporarily banned for too many failed login attempts']":
+            print(Fore.RED + "Your IP was banned on " + Fore.RESET + host)
         else:
-            print(exerr)
+            print(str(exerr) + " on " + host)
     except ConnectionResetError:
         print(host + ":" + str(port) + Fore.RED + " sent a reset package.")
     except gaierror:
@@ -228,10 +254,6 @@ async def asyncgetting(host, port, command, asyncnumber):
             print(host + ":" + str(port) + Fore.RED + " not responding (error 113).") if args.display else None
         elif "[Errno 101] Connect call failed" in str(oerr):
             print(host + ":" + str(port) + Fore.RED + " not responding (error 101).") if args.display else None
-        elif str(oerr) == "[Errno 24] Too many open files":
-            print("The range is too large. Try to specify less?")
-        else:
-            print(oerr)
     except KeyboardInterrupt:
         print(Fore.RED + "\nYou have interrupted host scanning. Move to the next one.")
 
@@ -257,9 +279,9 @@ def unpack_list(list):
                     tasks_list = [0].append(asyncgetting(host, *port, "MLSD", 0))
         flist.close()
     except FileNotFoundError:
-        print(Fore.RED + "File " + Fore.WHITE + list + Fore.RED + " not found.")
+        print(Fore.RED + "File " + Fore.RESET + list + Fore.RED + " not found.")
     except PermissionError:
-        print(Fore.RED + "Unable to open results file, but file " + Fore.WHITE + list + Fore.RED + " was found. Check your privileges.")
+        print(Fore.RED + "Unable to open results file, but file " + Fore.RESET + list + Fore.RED + " was found. Check your privileges.")
 
 # opening FTP from ip-range.
 def unpack_range(range_port):
@@ -273,7 +295,7 @@ def unpack_range(range_port):
         start, end = iprange.split('-')
         start = struct.unpack('>I', socket.inet_aton(start))[0]
         end = struct.unpack('>I', socket.inet_aton(end))[0]
-        hosts = [socket.inet_ntoa(struct.pack('>I', i)) for i in range(start, end)]
+        hosts = [socket.inet_ntoa(struct.pack('>I', i)) for i in range(start, end + 2)]
 
 # division a range by blocks with 1000 hosts to bypass aioftp connection error [Errno 24].
         [tasks_list.append([]) for _ in range(int(len(hosts) / 1000) + 1)]
@@ -326,14 +348,14 @@ def results(full_path, number):
                 fres.write("Cannot open the folder " + full_path + "<br>\n")
             fres.close
         except FileNotFoundError:
-            print(Fore.RED + "File" + Fore.WHITE + args.result + Fore.RED + " not found.")
+            print(Fore.RED + "File" + Fore.RESET + args.result + Fore.RED + " not found.")
         except PermissionError:
-            print(Fore.RED + "Unable to add string into results file, but file " + Fore.WHITE + args.result + Fore.RED + " was found. Check out your privileges.")
+            print(Fore.RED + "Unable to add string into results file, but file " + Fore.RESET + args.result + Fore.RED + " was found. Check out your privileges.")
 
 # ----------------------------------------------------------------------------------------------------------------------
 
 def main():
-    program_banner = open(os.path.join("banner_android.txt")).read() if 'ANDROID_STORAGE' in environ else open(os.path.join("banner.txt")).read()
+    program_banner = open(os.path.join("banner_android.txt")).read() if 'ANDROID_DATA' in environ else open(os.path.join("banner.txt")).read()
     init(autoreset = True)
     print(Fore.YELLOW + Style.BRIGHT + program_banner)
     global args
@@ -344,12 +366,12 @@ def main():
     global tasks_list
     if args.result != "N":
         try:
-            frw = open(args.result, 'w')
+            frw = open(args.result, 'a')
             frw.close
         except FileNotFoundError:
-            print(Fore.RED + "File " + Fore.WHITE + args.result + Fore.RED + " not found.")
+            print(Fore.RED + "File " + Fore.RESET + args.result + Fore.RED + " not found.")
         except PermissionError:
-            print(Fore.RED + "Unable to open results file, but file " + Fore.WHITE +  args.result + Fore.RED + " was found. Check your privileges.")
+            print(Fore.RED + "Unable to open results file, but file " + Fore.RESET +  args.result + Fore.RED + " was found. Check your privileges.")
     if args.hosts != False: # for single or some target FTP.
         args.list = False
         print(Style.DIM + str(args)[10:-1] + "\n")
