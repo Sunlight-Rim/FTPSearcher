@@ -276,7 +276,7 @@ def unpack_list(list):
                 if string != "":
                     host, *port = string.split(":")
                     port = ([int(port) for port in port]) if port != [] else [21]
-                    tasks_list = [0].append(asyncgetting(host, *port, "MLSD", 0))
+                    tasks_list[0].append(asyncgetting(host, *port, "MLSD", 0))
         flist.close()
     except FileNotFoundError:
         print(Fore.RED + "File " + Fore.RESET + list + Fore.RED + " not found.")
