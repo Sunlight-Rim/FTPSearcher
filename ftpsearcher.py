@@ -407,7 +407,5 @@ def main():
         except NameError:
             pass
 
-        ioloop.close()
-
 if __name__ == '__main__':
     main()
