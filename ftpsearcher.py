@@ -10,16 +10,9 @@ from socket import gaierror
 from ftplib import FTP, error_perm
 from colorama import Fore, Style, init
 
-class BlankLinesHelpFormatter (argparse.HelpFormatter):
-    def _split_lines(self, text, width):
-        lines = super()._split_lines(text, width)
-        if text.endswith('\n'):
-            lines += ['']
-        return lines
-
 def get_args():
     print("ver. 1.2\n")
-    parser = argparse.ArgumentParser(epilog="rest in pantene", formatter_class=BlankLinesHelpFormatter)
+    parser = argparse.ArgumentParser(epilog="rest in pantene")
     parser.add_argument("-l", type=str, dest="list", default="ftplist.txt",
             help="Path to txt file with FTP target list in form 'host:port' (ftplist.txt by default).")
     parser.add_argument("-f", type=str, dest="hosts", default=False, nargs="+",
@@ -35,7 +28,7 @@ def get_args():
     parser.add_argument("-nd", "--nodisplay", dest="display", action="store_false", default=True,
             help="Do not display servers that are not responding in the terminal log.")
     parser.add_argument("-s", "--sync", dest="sync", action="store_true", default=False,
-            help="Use only synchronous requests.\n")
+            help="Use only synchronous requests.")
     parser.add_argument("-A", "--all", dest="obj", action="store_const", const="", default="",
             help="Search all files.")
     parser.add_argument("-q", dest="obj", type=str, default="", nargs="+",
