@@ -2,13 +2,15 @@ FTP Searcher
 =========
 ![GitHub](https://img.shields.io/github/license/Sunlight-Rim/FTPSearcher?color=green)
 
-**FTP Searcher** is an asynchronous file tree crawler, file parser and scanner on FTP servers list/IP range by queries with recording the results to a file as a set of links.
+**FTP Searcher** is an asynchronous file crawler, file tree parser and scanner of FTP servers from the list or IP range with recording the results to a file as a set of links. It also can search by queries and at given tree level.
 
-![Terminal record](terminals.png)
+![Terminal record](imgs/desktop_output.png)
 
 Features
 --------
-Unlike other existing FTP crawlers and scanners that use threading, it uses asyncio as the main concurrency implementation because it's better suited for tasks that can implies slow I/O bound and multiple/unlimited quantity of connections. Moreover, there used a four types of requests: MLSD/LIST (asynchronous aioftp) in the main and MLSD/NLST (ftplib with multithreading) as a reserve method for some servers. It also runs and has been tested on Termux.
+Unlike other existing FTP crawlers and scanners that use threading, it uses asynchronous as the main concurrency implementation because it's better suited for tasks that can implies slow I/O bound and multiple/unlimited quantity of connections. Moreover, there used a four types of requests: MLSD/LIST (asynchronous asyncio and aioftp) in the main and MLSD/NLST (ftplib with multithreading) as a reserve method for some servers. It also runs on Termux.
+
+![termux](imgs/termux_output.png)
 
 Installation
 --------
@@ -49,10 +51,11 @@ rest in pantene
 ```
 
 If you don't explicitly specify the port, port 21 will be used by default.\
-Attention: some poorly configured FTP can't be used with concurrency methods; therefore, in such situations you can prefer to use only synchronous mode (flag '-s').
+Attention: some poorly configured FTP can't be used with concurrency methods or aioftp doesn't work with them; therefore, in such situations you can prefer to use only synchronous mode (flag '-s').
 
 Examples
 --------
+
 Just scan all files on FTP from ftplist.txt and write the results to results.html.
 ```
 python3 ftpsearcher.py
@@ -72,8 +75,7 @@ Search images on FTP list in /home/rim/targets-example.txt and record the result
 ```
 python3 ftpsearcher.py -l /home/rim/targets-example.txt -img -r res-example.html
 ```
-
-![speed](seconds.png)
+![speed](imgs/seconds.png)
 
 --------
 

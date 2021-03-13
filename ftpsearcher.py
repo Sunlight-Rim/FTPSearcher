@@ -147,8 +147,8 @@ def connect(host, cnct_port):
         if str(oerr) == "timed out":
             print(host + Fore.RED + " does not keep a stable connection. Try to run this one separately or later?")
             results(host, -2)
-    except EOFError:
-        print(Fore.RED + "Server sent a reset package.")
+        else:
+            print(oerr)
     except error_perm as msg:
         if msg.args[0][:3] != '530':
             print(Fore.GREEN + "Login authentication failed onto " + Fore.RESET + host + ":" + str(cnct_port))
