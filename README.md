@@ -4,13 +4,13 @@ FTP Searcher
 
 **FTP Searcher** is an asynchronous file crawler, file tree parser and scanner of FTP servers from the list or IP range with recording the results to a file as a set of links. It also can search by queries and at given tree level.
 
-![Terminal record](imgs/desktop_output.png)
+![preview](imgs/preview.png)
 
 Features
 --------
 Unlike other existing FTP crawlers and scanners that use threading, it uses asynchronous as the main concurrency implementation because it's better suited for tasks that can implies slow I/O bound and multiple/unlimited quantity of connections. Moreover, there used a four types of requests: MLSD/LIST (asynchronous asyncio and aioftp) in the main and MLSD/NLST (ftplib with multithreading) as a reserve method for some servers. It also runs on Termux.
 
-![termux](imgs/termux_output.png)
+![termux](imgs/termux.png)
 
 Installation
 --------
