@@ -4,7 +4,7 @@ FTP Searcher
 
 **FTP Searcher** is an asynchronous file crawler, file tree parser and scanner of FTP servers from the list or IP range with recording the results to a file as a set of links. It also can search by queries and at given tree level.
 
-![preview](imgs/preview.png)
+![preview](imgs/preview.jpg)
 
 Features
 --------
