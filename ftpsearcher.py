@@ -290,7 +290,7 @@ def unpack_range(range_port):
         end = struct.unpack('>I', socket.inet_aton(end))[0]
         hosts = [socket.inet_ntoa(struct.pack('>I', i)) for i in range(start, end + 2)]
 
-# division a range by blocks with 1000 hosts to bypass aioftp connection error [Errno 24].
+# division a range by blocks with 1000 hosts to evade aioftp connection error [Errno 24].
         [tasks_list.append([]) for _ in range(int(len(hosts) / 1000) + 1)]
         if args.sync:
             for host in hosts:
